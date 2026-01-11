@@ -73,17 +73,27 @@ export async function addCommand(
           onlyFiles: true,
         });
 
+          // Compute relative path from cwd to preserve folder structure
+          // e.g., ./ios/Runner → ios/Runner (not just Runner)
+          const relativeDirPath = path.relative(cwd, resolved);
+          const basePath = relativeDirPath.startsWith('..')
+              ? path.basename(resolved) // Outside cwd, use just the folder name
+              : relativeDirPath;        // Inside cwd, preserve full relative path
+
         for (const file of files) {
           filesToAdd.push({
             source: path.join(resolved, file),
-            relative: path.join(path.basename(resolved), file),
+              relative: path.join(basePath, file),
           });
         }
       } else {
-        // Single file
+          // Single file - preserve relative path from cwd
+          const relativeFilePath = path.relative(cwd, resolved);
         filesToAdd.push({
           source: resolved,
-          relative: path.basename(resolved),
+            relative: relativeFilePath.startsWith('..')
+                ? path.basename(resolved)  // Outside cwd, use just filename
+                : relativeFilePath,         // Inside cwd, preserve path
         });
       }
     } else {
