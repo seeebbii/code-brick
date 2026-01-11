@@ -256,6 +256,62 @@ brick delete 0
 brick delete 0 --force
 ```
 
+### `brick clean <name|index>`
+
+Remove local/project-specific imports from template files. This makes templates portable by stripping out imports that reference the original project.
+
+```bash
+# Clean a template (auto-detects project name)
+brick clean flutter-clean
+
+# By index
+brick clean 0
+
+# Preview what will be removed (dry run)
+brick clean 0 --dry-run
+
+# Use custom pattern
+brick clean 0 --pattern "package:my_app/"
+
+# Also remove external packages (not recommended)
+brick clean 0 --no-keep-external
+```
+
+**Options:**
+
+- `-p, --pattern <regex>` — Custom regex pattern to match imports to remove
+- `--dry-run` — Preview changes without modifying files
+- `--no-keep-external` — Also remove external package imports
+
+**Example (Flutter/Dart):**
+
+Before cleaning:
+
+```dart
+import 'package:my_app/features/auth/login.dart';
+import 'package:my_app/core/utils/helpers.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+```
+
+After `brick clean flutter-template`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+```
+
+**Supported languages:**
+
+| Language        | Local Imports Removed              | External Imports Kept              |
+| --------------- | ---------------------------------- | ---------------------------------- |
+| **Dart/Flutter**| `package:project_name/...`         | `package:flutter/`, `package:go_router/`, etc. |
+| **TypeScript/JS** | `./path`, `../path`              | `react`, `lodash`, `express`, etc. |
+| **Python**      | `from .module`, `from ..`          | `from flask`, `import requests`    |
+| **Rust**        | `use crate::`, `use super::`       | `use std::`, external crates       |
+
+The command auto-detects the project name from `pubspec.yaml`, `package.json`, or `pyproject.toml`.
+
 ## Smart Ignore System
 
 Brick **automatically ignores** common dependency directories, build outputs, and generated files across all frameworks. This keeps your templates clean and portable.
@@ -389,6 +445,7 @@ brick tree 0
 brick info 1
 brick apply 2 ./lib
 brick size 0
+brick clean 2          # Remove local imports
 brick delete 1 --force
 ```
 
