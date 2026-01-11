@@ -107,15 +107,33 @@ brick list --tag auth
 brick list --detailed
 ```
 
-### `brick tree <name>`
+**Output:**
+
+```
+  #   Name                Type    Files  Description
+  ─────────────────────────────────────────────────────────────────────
+  0   nestjs-auth         local   5      JWT authentication module
+  1   react-modal         local   3      Animated modal with backdrop
+  2   docker-dev          local   4      Docker Compose dev setup
+
+  3 templates (3 local, 0 remote)
+```
+
+> 💡 **Tip:** Use the index number (`0`, `1`, `2`) instead of the full name in any command!
+
+### `brick tree <name|index>`
 
 Display the file structure of a template.
 
 ```bash
+# By name
 brick tree nestjs-auth
 
+# By index
+brick tree 0
+
 # With file sizes
-brick tree nestjs-auth --size
+brick tree 0 --size
 ```
 
 **Output:**
@@ -133,7 +151,7 @@ nestjs-auth
 5 files, 2 directories
 ```
 
-### `brick apply <name> [destination]`
+### `brick apply <name|index> [destination]`
 
 Apply a template to your project.
 
@@ -141,11 +159,11 @@ Apply a template to your project.
 # Apply to current directory
 brick apply nestjs-auth
 
-# Apply to specific path
-brick apply nestjs-auth ./src/auth
+# Apply by index
+brick apply 0 ./src/auth
 
 # With options
-brick apply nestjs-auth --force --latest
+brick apply 0 --force --latest
 ```
 
 **Options:**
@@ -156,15 +174,51 @@ brick apply nestjs-auth --force --latest
 - `--latest` — Use @latest for all dependency versions
 - `--no-deps` — Skip dependency installation prompts
 
-### `brick info <name>`
+### `brick info <name|index>`
 
 Show detailed information about a template.
 
 ```bash
 brick info nestjs-auth
+brick info 0
 ```
 
-### `brick add <name> <files...>`
+### `brick size [name|index]`
+
+Show the size of templates.
+
+```bash
+# Show all template sizes
+brick size
+
+# Show specific template size
+brick size nestjs-auth
+brick size 0
+```
+
+**Output (all templates):**
+
+```
+  #   Name                Type    Files      Size
+  ─────────────────────────────────────────────────────────────────────
+  0   nestjs-auth         local   5          12.4 KB
+  1   react-modal         local   3          8.2 KB
+  2   docker-dev          local   4          3.1 KB
+
+Total: 12 files, 23.7 KB
+```
+
+**Output (single template):**
+
+```
+nestjs-auth
+
+  Files:       5
+  Directories: 2
+  Total Size:  12.4 KB
+```
+
+### `brick add <name|index> <files...>`
 
 Add files to an existing template.
 
@@ -172,31 +226,75 @@ Add files to an existing template.
 # Add a single file
 brick add nestjs-auth ./src/auth/dto/login.dto.ts
 
-# Add multiple files
-brick add nestjs-auth ./src/auth/dto/*.ts
+# Add by index
+brick add 0 ./src/auth/dto/*.ts
 
 # Add a directory
-brick add nestjs-auth ./src/auth/decorators/
+brick add 0 ./src/auth/decorators/
 ```
 
-### `brick remove-file <name> <files...>`
+### `brick remove-file <name|index> <files...>`
 
 Remove files from a template.
 
 ```bash
 brick remove-file nestjs-auth auth.controller.ts
-brick remove-file nestjs-auth dto/
+brick remove-file 0 dto/
 ```
 
-### `brick delete <name>`
+### `brick delete <name|index>`
 
 Delete a template entirely.
 
 ```bash
 brick delete nestjs-auth
 
+# By index
+brick delete 0
+
 # Skip confirmation
-brick delete nestjs-auth --force
+brick delete 0 --force
+```
+
+## Smart Ignore System
+
+Brick **automatically ignores** common dependency directories, build outputs, and generated files across all frameworks. This keeps your templates clean and portable.
+
+### Ignored Directories
+
+| Framework     | Automatically Ignored                                           |
+| ------------- | --------------------------------------------------------------- |
+| **Node.js**   | `node_modules/`, `.npm/`, `.yarn/`, `.pnpm-store/`              |
+| **Python**    | `__pycache__/`, `.venv/`, `venv/`, `.pytest_cache/`, `.mypy_cache/` |
+| **Flutter**   | `.dart_tool/`, `.pub-cache/`, `build/`, `.flutter-plugins*`     |
+| **Rust**      | `target/`                                                       |
+| **Go**        | `vendor/`                                                       |
+| **Java**      | `.gradle/`, `.idea/`, `out/`, `build/`                          |
+| **iOS**       | `Pods/`, `.symlinks/`, `DerivedData/`                           |
+| **.NET**      | `bin/`, `obj/`, `packages/`                                     |
+| **Build**     | `dist/`, `build/`, `.next/`, `.nuxt/`, `.output/`, `.vercel/`   |
+| **Cache**     | `.cache/`, `.temp/`, `.turbo/`, `coverage/`                     |
+| **VCS**       | `.git/`, `.svn/`, `.hg/`                                        |
+| **IDE**       | `.idea/`, `.vscode/` (settings, not launch configs)             |
+
+### Ignored Files
+
+| Category     | Files                                                              |
+| ------------ | ------------------------------------------------------------------ |
+| **Locks**    | `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Podfile.lock` |
+| **Env**      | `.env`, `.env.local`, `.env.production`, `.env.*`                  |
+| **OS**       | `.DS_Store`, `Thumbs.db`, `desktop.ini`                            |
+| **Logs**     | `*.log`, `npm-debug.log*`, `yarn-debug.log*`                       |
+| **Metadata** | `brick.json` (template metadata)                                   |
+
+This means when you save a template, you get **only the source code** — no bloat:
+
+```bash
+# Before smart ignore (hypothetical)
+flutter-app: 1,247 files, 89.2 MB  ❌
+
+# With smart ignore (actual)
+flutter-app: 42 files, 156 KB      ✅
 ```
 
 ## Framework Agnostic
@@ -246,8 +344,8 @@ brick save nestjs-auth ./src/auth \
 nest new my-new-api
 cd my-new-api
 
-# Apply the auth template
-brick apply nestjs-auth ./src/auth
+# Apply the auth template (by index or name)
+brick apply 0 ./src/auth
 
 # Install dependencies (brick will show you the command)
 npm install @nestjs/jwt @nestjs/passport passport-jwt bcrypt
@@ -261,12 +359,37 @@ brick save react-modal ./src/components/Modal \
   --tags react,modal,ui,animation
 ```
 
+### Save Flutter Clean Architecture
+
+```bash
+brick save flutter-clean ./lib \
+  --description "Clean architecture with BLoC" \
+  --tags flutter,bloc,clean-architecture
+```
+
 ### Save Docker Configs
 
 ```bash
 brick save docker-dev ./docker \
   --description "Docker Compose development setup" \
   --tags docker,devops
+```
+
+### Quick Operations with Index
+
+```bash
+# List templates
+brick list
+#   0   nestjs-auth
+#   1   react-modal
+#   2   flutter-clean
+
+# Use index for faster operations
+brick tree 0
+brick info 1
+brick apply 2 ./lib
+brick size 0
+brick delete 1 --force
 ```
 
 ## License
