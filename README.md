@@ -392,10 +392,6 @@ brick size 0
 brick delete 1 --force
 ```
 
-## License
-
-MIT
-
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.
