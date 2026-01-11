@@ -11,6 +11,7 @@ import { infoCommand } from "./commands/info.js";
 import { addCommand } from "./commands/add.js";
 import { removeFileCommand } from "./commands/remove-file.js";
 import { deleteCommand } from "./commands/delete.js";
+import { sizeCommand } from "./commands/size.js";
 
 const program = new Command();
 
@@ -94,5 +95,11 @@ program
     .description("Delete a template entirely")
     .option("-f, --force", "Skip confirmation")
     .action(deleteCommand);
+
+// Size command
+program
+    .command("size [name]")
+    .description("Show template size(s) - all templates if no name provided")
+    .action(sizeCommand);
 
 program.parse();

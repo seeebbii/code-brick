@@ -188,3 +188,31 @@ export async function deleteTemplateFiles(name: string): Promise<void> {
         await fs.remove(templatePath);
     }
 }
+
+// Get all template names in order
+export async function getTemplateNames(): Promise<string[]> {
+    const store = await loadStore();
+    return Object.keys(store.templates);
+}
+
+// Resolve template name from index or name
+// Returns the actual template name, or null if not found
+export async function resolveTemplateName(
+    nameOrIndex: string
+): Promise<string | null> {
+    const store = await loadStore();
+    const names = Object.keys(store.templates);
+
+    // Check if it's a numeric index
+    const index = parseInt(nameOrIndex, 10);
+    if (!isNaN(index) && index >= 0 && index < names.length) {
+        return names[index];
+    }
+
+    // Check if it's a direct name match
+    if (nameOrIndex in store.templates) {
+        return nameOrIndex;
+    }
+
+    return null;
+}

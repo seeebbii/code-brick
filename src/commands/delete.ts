@@ -1,12 +1,12 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import {
-  isInitialized,
-  templateExists,
+    isInitialized,
   getTemplate,
   removeTemplateFromStore,
   deleteTemplateFiles,
   loadTemplateMetadata,
+    resolveTemplateName,
 } from "../lib/storage.js";
 
 interface DeleteOptions {
@@ -14,7 +14,7 @@ interface DeleteOptions {
 }
 
 export async function deleteCommand(
-  name: string,
+    nameOrIndex: string,
   options: DeleteOptions
 ): Promise<void> {
   // Check if initialized
@@ -25,10 +25,11 @@ export async function deleteCommand(
     process.exit(1);
   }
 
-  // Check if template exists
-  if (!(await templateExists(name))) {
+    // Resolve template name from index or name
+    const name = await resolveTemplateName(nameOrIndex);
+    if (!name) {
     p.log.error(
-      `Template '${name}' not found. Run ${pc.cyan("brick list")} to see available templates.`
+        `Template '${nameOrIndex}' not found. Run ${pc.cyan("brick list")} to see available templates.`
     );
     process.exit(1);
   }

@@ -1,16 +1,15 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import {
-  isInitialized,
-  templateExists,
+    isInitialized,
   getTemplate,
   getTemplatePath,
   loadTemplateMetadata,
-  TEMPLATES_DIR,
+    resolveTemplateName,
 } from "../lib/storage.js";
 import { formatDate, createBox, getDirectoryStats } from "../lib/utils.js";
 
-export async function infoCommand(name: string): Promise<void> {
+export async function infoCommand(nameOrIndex: string): Promise<void> {
   // Check if initialized
   if (!(await isInitialized())) {
     p.log.error(
@@ -19,10 +18,11 @@ export async function infoCommand(name: string): Promise<void> {
     process.exit(1);
   }
 
-  // Check if template exists
-  if (!(await templateExists(name))) {
+    // Resolve template name from index or name
+    const name = await resolveTemplateName(nameOrIndex);
+    if (!name) {
     p.log.error(
-      `Template '${name}' not found. Run ${pc.cyan("brick list")} to see available templates.`
+        `Template '${nameOrIndex}' not found. Run ${pc.cyan("brick list")} to see available templates.`
     );
     process.exit(1);
   }

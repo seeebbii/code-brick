@@ -80,21 +80,23 @@ export async function listCommand(options: ListOptions): Promise<void> {
     console.log(pc.dim(`Total: ${templates.length} template${templates.length === 1 ? "" : "s"}`));
   }
   console.log();
+    console.log(pc.dim("Tip: Use index or name with commands, e.g., brick tree 0"));
+    console.log();
 }
 
 function renderTableList(
   templates: [string, LocalTemplate | RemoteTemplate][]
 ): void {
-  const headers = ["Name", "Type", "Description", "Tags"];
-  const columnWidths = [18, 8, 32, 16];
+    const headers = ["#", "Name", "Type", "Description"];
+    const columnWidths = [3, 28, 8, 36];
 
-  const rows = templates.map(([name, template]) => {
+    const rows = templates.map(([name, template], index) => {
     const typeColor = template.type === "local" ? pc.green : pc.blue;
     return [
-      truncate(name, columnWidths[0]),
+        pc.yellow(index.toString()),
+        truncate(name, columnWidths[1]),
       typeColor(template.type),
-      truncate(template.description || "-", columnWidths[2]),
-      truncate(template.tags.join(", ") || "-", columnWidths[3]),
+        truncate(template.description || "-", columnWidths[3]),
     ];
   });
 
@@ -108,6 +110,9 @@ async function renderDetailedList(
   const localTemplates = templates.filter(([, t]) => t.type === "local");
   const remoteTemplates = templates.filter(([, t]) => t.type === "remote");
 
+    // Track global index
+    let globalIndex = 0;
+
   console.log();
 
   if (localTemplates.length > 0) {
@@ -119,16 +124,17 @@ async function renderDetailedList(
       const metadata = await loadTemplateMetadata(name);
       const fileCount = metadata?.files.length || 0;
 
-      console.log(pc.bold(pc.green(name)));
-      console.log(`  Type:        ${pc.dim("local")}`);
-      console.log(`  Description: ${template.description || pc.dim("No description")}`);
-      console.log(`  Files:       ${fileCount} files`);
+        console.log(pc.yellow(`[${globalIndex}]`) + " " + pc.bold(pc.green(name)));
+        console.log(`    Type:        ${pc.dim("local")}`);
+        console.log(`    Description: ${template.description || pc.dim("No description")}`);
+        console.log(`    Files:       ${fileCount} files`);
       if (template.tags.length > 0) {
-        console.log(`  Tags:        ${template.tags.join(", ")}`);
+          console.log(`    Tags:        ${template.tags.join(", ")}`);
       }
-      console.log(`  Created:     ${formatDate(template.createdAt)}`);
-      console.log(`  Updated:     ${formatDate(template.updatedAt)}`);
+        console.log(`    Created:     ${formatDate(template.createdAt)}`);
+        console.log(`    Updated:     ${formatDate(template.updatedAt)}`);
       console.log();
+        globalIndex++;
     }
   }
 
@@ -147,16 +153,17 @@ async function renderDetailedList(
         ? `${remote.github.ref} @ ${remote.github.commit.slice(0, 7)}`
         : remote.github.ref;
 
-      console.log(pc.bold(pc.blue(name)));
-      console.log(`  Type:        ${pc.dim("remote")}`);
-      console.log(`  Source:      ${source}`);
-      console.log(`  Ref:         ${ref}`);
-      console.log(`  Description: ${template.description || pc.dim("No description")}`);
+        console.log(pc.yellow(`[${globalIndex}]`) + " " + pc.bold(pc.blue(name)));
+        console.log(`    Type:        ${pc.dim("remote")}`);
+        console.log(`    Source:      ${source}`);
+        console.log(`    Ref:         ${ref}`);
+        console.log(`    Description: ${template.description || pc.dim("No description")}`);
       if (template.tags.length > 0) {
-        console.log(`  Tags:        ${template.tags.join(", ")}`);
+          console.log(`    Tags:        ${template.tags.join(", ")}`);
       }
-      console.log(`  Linked:      ${formatDate(template.createdAt)}`);
+        console.log(`    Linked:      ${formatDate(template.createdAt)}`);
       console.log();
+        globalIndex++;
     }
   }
 }

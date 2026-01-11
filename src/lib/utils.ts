@@ -2,6 +2,160 @@ import fs from "fs-extra";
 import path from "path";
 import pc from "picocolors";
 
+// Directories to ignore when saving templates (dependencies, builds, caches)
+export const IGNORED_DIRECTORIES = new Set([
+    // Node.js / JavaScript
+    "node_modules",
+    ".npm",
+    ".pnpm-store",
+    ".yarn",
+    ".pnp",
+    "bower_components",
+
+    // Flutter / Dart
+    ".dart_tool",
+    ".pub-cache",
+    ".pub",
+    "build",
+
+    // Python
+    "__pycache__",
+    ".venv",
+    "venv",
+    "env",
+    ".env",
+    ".eggs",
+    "*.egg-info",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".tox",
+    ".nox",
+    "site-packages",
+
+    // Go
+    "vendor",
+
+    // Rust
+    "target",
+
+    // Java / Kotlin / Android
+    ".gradle",
+    ".idea",
+    "out",
+    ".cxx",
+
+    // Ruby
+    ".bundle",
+
+    // PHP
+    "vendor",
+
+    // .NET / C#
+    "bin",
+    "obj",
+    "packages",
+
+    // iOS / macOS
+    "Pods",
+    ".symlinks",
+    "DerivedData",
+
+    // General build outputs
+    "dist",
+    "build",
+    "out",
+    "output",
+    ".next",
+    ".nuxt",
+    ".output",
+    ".vercel",
+    ".netlify",
+
+    // Caches
+    ".cache",
+    ".parcel-cache",
+    ".turbo",
+    ".temp",
+    ".tmp",
+    "tmp",
+    "temp",
+    "coverage",
+    ".nyc_output",
+
+    // Version control
+    ".git",
+    ".svn",
+    ".hg",
+
+    // IDE / Editor
+    ".vscode",
+    ".idea",
+    ".vs",
+    ".settings",
+    "*.swp",
+    "*.swo",
+]);
+
+// Files to ignore
+export const IGNORED_FILES = new Set([
+    ".DS_Store",
+    "Thumbs.db",
+    ".gitignore",
+    ".gitattributes",
+    ".editorconfig",
+    "brick.json",
+    ".env",
+    ".env.local",
+    ".env.development",
+    ".env.production",
+    "*.log",
+    "npm-debug.log",
+    "yarn-error.log",
+    ".flutter-plugins",
+    ".flutter-plugins-dependencies",
+    ".packages",
+    "pubspec.lock",
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "Podfile.lock",
+    "Gemfile.lock",
+    "poetry.lock",
+    "Cargo.lock",
+    "go.sum",
+]);
+
+// Check if a directory should be ignored
+export function shouldIgnoreDirectory(name: string): boolean {
+    // Ignore hidden directories (starting with .)
+    if (name.startsWith(".")) {
+        return true;
+    }
+    return IGNORED_DIRECTORIES.has(name);
+}
+
+// Check if a file should be ignored
+export function shouldIgnoreFile(name: string): boolean {
+    // Ignore hidden files
+    if (name.startsWith(".")) {
+        return true;
+    }
+    // Check exact match
+    if (IGNORED_FILES.has(name)) {
+        return true;
+    }
+    // Check patterns (e.g., *.log)
+    for (const pattern of IGNORED_FILES) {
+        if (pattern.startsWith("*")) {
+            const ext = pattern.slice(1);
+            if (name.endsWith(ext)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 // Format file size
 export function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
@@ -47,19 +201,15 @@ export async function getFilesRecursive(
         const relativePath = path.relative(baseDir, fullPath);
 
         if (entry.isDirectory()) {
-            // Skip hidden directories and common ignores
-            if (
-                entry.name.startsWith(".") ||
-                entry.name === "node_modules" ||
-                entry.name === "__pycache__"
-            ) {
-                continue;
-            }
-            const subFiles = await getFilesRecursive(fullPath, baseDir);
-            files.push(...subFiles);
-        } else {
-            // Skip hidden files and brick.json
-            if (!entry.name.startsWith(".") && entry.name !== "brick.json") {
+          // Skip ignored directories
+          if (shouldIgnoreDirectory(entry.name)) {
+              continue;
+          }
+          const subFiles = await getFilesRecursive(fullPath, baseDir);
+          files.push(...subFiles);
+      } else {
+            // Skip ignored files
+            if (!shouldIgnoreFile(entry.name)) {
                 files.push(relativePath);
             }
         }
@@ -82,17 +232,13 @@ export async function getDirectoryStats(
         for (const entry of entries) {
             const fullPath = path.join(currentDir, entry.name);
 
-            if (entry.isDirectory()) {
-                if (
-                    !entry.name.startsWith(".") &&
-                    entry.name !== "node_modules" &&
-                    entry.name !== "__pycache__"
-                ) {
-                    directories++;
-                    await processDir(fullPath);
-                }
-            } else {
-                if (!entry.name.startsWith(".")) {
+          if (entry.isDirectory()) {
+            if (!shouldIgnoreDirectory(entry.name)) {
+                directories++;
+                await processDir(fullPath);
+            }
+        } else {
+                if (!shouldIgnoreFile(entry.name)) {
                     files++;
                     const stat = await fs.stat(fullPath);
                     totalSize += stat.size;
@@ -128,22 +274,22 @@ export async function buildTree(
     });
 
     for (const entry of sortedEntries) {
-        // Skip hidden files/dirs and brick.json for display
-        if (entry.name.startsWith(".")) continue;
-
         const fullPath = path.join(dir, entry.name);
 
         if (entry.isDirectory()) {
-            if (entry.name === "node_modules" || entry.name === "__pycache__")
-                continue;
+          // Skip ignored directories
+          if (shouldIgnoreDirectory(entry.name)) continue;
 
-            const children = await buildTree(fullPath, includeSize);
-            nodes.push({
-                name: entry.name,
-                type: "directory",
-                children,
-            });
-        } else {
+          const children = await buildTree(fullPath, includeSize);
+          nodes.push({
+              name: entry.name,
+              type: "directory",
+              children,
+          });
+      } else {
+          // Skip ignored files
+          if (shouldIgnoreFile(entry.name)) continue;
+
             const node: TreeNode = {
                 name: entry.name,
                 type: "file",

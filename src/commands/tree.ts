@@ -1,10 +1,10 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import {
-  isInitialized,
-  templateExists,
+    isInitialized,
   getTemplatePath,
   getTemplate,
+    resolveTemplateName,
 } from "../lib/storage.js";
 import {
   buildTree,
@@ -19,7 +19,7 @@ interface TreeOptions {
 }
 
 export async function treeCommand(
-  name: string,
+    nameOrIndex: string,
   options: TreeOptions
 ): Promise<void> {
   // Check if initialized
@@ -30,15 +30,15 @@ export async function treeCommand(
     process.exit(1);
   }
 
-  // Check if template exists
-  if (!(await templateExists(name))) {
+    // Resolve template name from index or name
+    const name = await resolveTemplateName(nameOrIndex);
+    if (!name) {
     p.log.error(
-      `Template '${name}' not found. Run ${pc.cyan("brick list")} to see available templates.`
+        `Template '${nameOrIndex}' not found. Run ${pc.cyan("brick list")} to see available templates.`
     );
     process.exit(1);
   }
 
-  // Get template info
   const template = await getTemplate(name);
 
   if (!template) {

@@ -3,18 +3,18 @@ import pc from "picocolors";
 import fs from "fs-extra";
 import path from "path";
 import {
-  isInitialized,
-  templateExists,
+    isInitialized,
   getTemplatePath,
   getTemplate,
   loadTemplateMetadata,
   saveTemplateMetadata,
   addTemplateToStore,
   LocalTemplate,
+    resolveTemplateName,
 } from "../lib/storage.js";
 
 export async function removeFileCommand(
-  name: string,
+    nameOrIndex: string,
   filePatterns: string[]
 ): Promise<void> {
   p.intro(pc.cyan("🧱 Removing files from template"));
@@ -27,10 +27,11 @@ export async function removeFileCommand(
     process.exit(1);
   }
 
-  // Check if template exists
-  if (!(await templateExists(name))) {
+    // Resolve template name from index or name
+    const name = await resolveTemplateName(nameOrIndex);
+    if (!name) {
     p.log.error(
-      `Template '${name}' not found. Run ${pc.cyan("brick list")} to see available templates.`
+        `Template '${nameOrIndex}' not found. Run ${pc.cyan("brick list")} to see available templates.`
     );
     process.exit(1);
   }
